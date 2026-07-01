@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 
 interface User {
   id: string
@@ -25,6 +25,20 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    // Load user from localStorage only after hydration
+    const savedUser = localStorage.getItem('terraiq_user')
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser))
+      } catch (e) {
+        console.error('[v0] Failed to parse saved user:', e)
+      }
+    }
+    setHydrated(true)
+  }, [])
 
   const logout = () => {
     setUser(null)

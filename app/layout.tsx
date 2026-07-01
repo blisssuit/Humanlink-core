@@ -51,8 +51,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
-      <body className="font-sans antialiased">
+    <html lang="en" data-scroll-behavior="smooth" className={`${geistSans.variable} ${geistMono.variable} bg-background`} suppressHydrationWarning>
+      <body className="font-sans antialiased" suppressHydrationWarning>
         <AppProvider>
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}

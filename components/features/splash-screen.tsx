@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation'
 export function SplashScreen() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     const timer = setTimeout(() => {
       setIsLoading(false)
       router.push('/auth/login')
@@ -16,8 +18,13 @@ export function SplashScreen() {
     return () => clearTimeout(timer)
   }, [router])
 
+  // Don't render until client hydration is complete
+  if (!mounted) {
+    return null
+  }
+
   return (
-    <div className={`fixed inset-0 bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center z-50 ${!isLoading ? 'hidden' : ''}`}>
+    <div className={`fixed inset-0 bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center z-50 transition-opacity duration-300 ${!isLoading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse-grow"></div>
