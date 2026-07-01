@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useApp } from '@/lib/context'
 import { BottomNav } from '@/components/layout/bottom-nav'
@@ -9,6 +9,7 @@ import {
   mockFarmHealth,
   mockRecommendedCrops,
   mockMarketPrices,
+  mockFarmData,
 } from '@/lib/mock-data'
 import {
   Cloud,
@@ -22,13 +23,19 @@ import {
   Truck,
   MapPin,
   Heart,
+  MessageCircle,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  TrendingDown,
 } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useApp()
+  const [showAIAssistant, setShowAIAssistant] = useState(false)
 
   return (
-    <div className="bg-background min-h-screen pb-32">
+    <div className="bg-background min-h-screen pb-32 relative">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-card border-b border-border">
         <div className="max-w-lg mx-auto px-6 py-6">
@@ -228,23 +235,203 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Recent AI Insights */}
+        {/* Today's AI Insights */}
         <section className="animate-in fade-in slide-in-from-top duration-500 delay-375">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Recent Insights</h2>
-          <div className="premium-card p-6 border-l-4 border-accent">
-            <div className="flex gap-3">
-              <Zap className="w-6 h-6 text-accent flex-shrink-0" />
-              <div>
-                <p className="font-semibold text-foreground">Optimal Planting Window</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Based on current weather patterns, next week is ideal for planting maize. Your farm has 89% suitability.
-                </p>
-                <button className="text-primary text-xs font-semibold mt-3 hover:underline">Learn more →</button>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Today's AI Insights</h2>
+          <div className="space-y-3">
+            <div className="premium-card p-4 border-l-4 border-accent">
+              <div className="flex gap-3">
+                <Zap className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-sm">Optimal Planting Window</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Next week is ideal for planting maize. Your farm has 89% suitability.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="premium-card p-4 border-l-4 border-green-500">
+              <div className="flex gap-3">
+                <AlertTriangle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-sm">Irrigation Alert</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Soil moisture is optimal. Reduce watering by 20% this week.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </section>
+
+        {/* Recommended Crops This Month */}
+        <section className="animate-in fade-in slide-in-from-top duration-500 delay-[450ms]">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase">Crops for This Month</h2>
+            <Link href="/planner" className="text-primary text-xs font-semibold hover:underline">
+              View planner
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {mockRecommendedCrops.map((crop) => (
+              <Link
+                key={crop.id}
+                href="/planner"
+                className="premium-card p-4 hover:shadow-md transition-all"
+              >
+                <div className="mb-3">
+                  <p className="font-semibold text-foreground text-sm">{crop.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{crop.season}</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">Suitability</span>
+                    <span className="text-sm font-bold text-primary">{crop.suitability}%</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all"
+                      style={{ width: `${crop.suitability}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{crop.expectedYield}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Market Prices Today */}
+        <section className="animate-in fade-in slide-in-from-top duration-500 delay-[525ms]">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase">Market Prices Today</h2>
+            <Link href="/marketplace" className="text-primary text-xs font-semibold hover:underline">
+              Full market
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {mockMarketPrices.map((item) => (
+              <div key={item.crop} className="premium-card p-4 flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-sm">{item.crop}</p>
+                  <p className="text-sm text-accent font-bold">{item.price}</p>
+                </div>
+                <div
+                  className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg ${
+                    item.trend === 'up'
+                      ? 'bg-green-100 text-green-700'
+                      : item.trend === 'down'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {item.trend === 'up' && <TrendingUp className="w-3 h-3" />}
+                  {item.trend === 'down' && <TrendingDown className="w-3 h-3" />}
+                  {item.change}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Recent Activities Timeline */}
+        <section className="animate-in fade-in slide-in-from-top duration-500 delay-[600ms]">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Recent Activities</h2>
+          <div className="premium-card p-6">
+            <div className="space-y-4">
+              {[
+                {
+                  type: 'harvest',
+                  title: 'Harvested 45 tons of Maize',
+                  time: 'Today at 2:30 PM',
+                  icon: CheckCircle2,
+                  color: 'text-green-600',
+                },
+                {
+                  type: 'scan',
+                  title: 'Crop scan completed - No diseases detected',
+                  time: 'Yesterday at 10:15 AM',
+                  icon: Zap,
+                  color: 'text-primary',
+                },
+                {
+                  type: 'transaction',
+                  title: 'Sold 20 tons of Rice - ₦385,000',
+                  time: '2 days ago',
+                  icon: CheckCircle2,
+                  color: 'text-blue-600',
+                },
+                {
+                  type: 'booking',
+                  title: 'Truck booking completed for delivery',
+                  time: '3 days ago',
+                  icon: Truck,
+                  color: 'text-orange-600',
+                },
+              ].map((activity, idx) => {
+                const Icon = activity.icon
+                return (
+                  <div key={idx} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <Icon className={`w-5 h-5 ${activity.color}`} />
+                      {idx < 3 && <div className="w-0.5 h-12 bg-border mt-2" />}
+                    </div>
+                    <div className="pb-2">
+                      <p className="text-sm font-semibold text-foreground">{activity.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
       </div>
+
+      {/* Floating AI Assistant Button */}
+      <button
+        onClick={() => setShowAIAssistant(!showAIAssistant)}
+        className="fixed bottom-32 right-4 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-all active:scale-95 z-40"
+        aria-label="AI Assistant"
+      >
+        <MessageCircle className="w-6 h-6" />
+      </button>
+
+      {/* AI Assistant Modal */}
+      {showAIAssistant && (
+        <div className="fixed bottom-32 right-4 w-80 max-w-[calc(100vw-2rem)] bg-card rounded-2xl shadow-2xl border border-border p-6 z-40 animate-in slide-in-from-bottom">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-foreground">TerraIQ AI Assistant</h3>
+            <button
+              onClick={() => setShowAIAssistant(false)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-4 mb-4">
+            <p className="text-sm text-foreground mb-3">
+              Hello! I'm your AI farming advisor. How can I help you today?
+            </p>
+            <div className="space-y-2">
+              <button className="w-full text-left text-xs font-semibold text-primary hover:underline p-2 rounded hover:bg-muted transition-colors">
+                → Recommend crops for my farm
+              </button>
+              <button className="w-full text-left text-xs font-semibold text-primary hover:underline p-2 rounded hover:bg-muted transition-colors">
+                → Check today's weather forecast
+              </button>
+              <button className="w-full text-left text-xs font-semibold text-primary hover:underline p-2 rounded hover:bg-muted transition-colors">
+                → Get pest management tips
+              </button>
+            </div>
+          </div>
+          <input
+            type="text"
+            placeholder="Ask me anything..."
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <BottomNav />
