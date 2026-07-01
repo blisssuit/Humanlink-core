@@ -16,10 +16,8 @@ export function SplashScreen() {
     return () => clearTimeout(timer)
   }, [router])
 
-  if (!isLoading) return null
-
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center z-50">
+    <div className={`fixed inset-0 bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center z-50 ${!isLoading ? 'hidden' : ''}`}>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse-grow"></div>
