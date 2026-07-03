@@ -14,12 +14,11 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 }
 
-// Validate required config
+// Validate required config (only warn, don't fail)
 const requiredFields = ['apiKey', 'projectId', 'storageBucket'] as const
-for (const field of requiredFields) {
-  if (!firebaseConfig[field]) {
-    console.error(`[v0] Missing Firebase config: NEXT_PUBLIC_FIREBASE_${field.toUpperCase()}`)
-  }
+const missingFields = requiredFields.filter(field => !firebaseConfig[field])
+if (missingFields.length > 0 && typeof window !== 'undefined') {
+  console.warn(`[v0] Missing Firebase config: ${missingFields.map(f => f.toUpperCase()).join(', ')}. Using mock data.`)
 }
 
 // Initialize Firebase (singleton)
