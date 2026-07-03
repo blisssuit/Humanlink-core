@@ -28,28 +28,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    // Load user from localStorage only after hydration
-    const savedUser = localStorage.getItem('terraiq_user')
-    if (savedUser) {
-      try {
+    // Load user from localStorage only after hydration completes on client
+    if (typeof window === 'undefined') return
+    
+    try {
+      const savedUser = localStorage.getItem('terraiq_user')
+      if (savedUser) {
         setUser(JSON.parse(savedUser))
-      } catch (e) {
-        console.error('[v0] Failed to parse saved user:', e)
       }
+    } catch (e) {
+      console.error('[v0] Failed to load user from storage:', e)
     }
+    
     setHydrated(true)
   }, [])
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem('terraiq_user')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('terraiq_user')
+    }
   }
 
   const updateUser = (updates: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...updates }
       setUser(updatedUser)
-      localStorage.setItem('terraiq_user', JSON.stringify(updatedUser))
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('terraiq_user', JSON.stringify(updatedUser))
+      }
     }
   }
 
@@ -60,7 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isLoggedIn: !!user,
         setUser: (newUser) => {
           setUser(newUser)
-          if (newUser) {
+          if (newUser && typeof window !== 'undefined') {
             localStorage.setItem('terraiq_user', JSON.stringify(newUser))
           }
         },
