@@ -1,15 +1,6 @@
 {
   "buildCommand": "pnpm build",
   "installCommand": "pnpm install",
-  "env": {
-    "NEXT_PUBLIC_FIREBASE_APIKEY": "@next_public_firebase_apikey",
-    "NEXT_PUBLIC_FIREBASE_AUTHDOMAIN": "@next_public_firebase_authdomain",
-    "NEXT_PUBLIC_FIREBASE_PROJECTID": "@next_public_firebase_projectid",
-    "NEXT_PUBLIC_FIREBASE_STORAGEBUCKET": "@next_public_firebase_storagebucket",
-    "NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID": "@next_public_firebase_messagingsenderid",
-    "NEXT_PUBLIC_FIREBASE_APPID": "@next_public_firebase_appid",
-    "NEXT_PUBLIC_AI_PROVIDER": "@next_public_ai_provider"
-  },
   "headers": [
     {
       "source": "/(.*)",
