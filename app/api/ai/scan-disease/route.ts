@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/firebase/config'
-import { getUserProfile } from '@/lib/firebase/db'
 import { aiService } from '@/lib/services/ai/ai-service'
-import { createDocument } from '@/lib/firebase/db'
 
 /**
  * POST /api/ai/scan-disease
@@ -47,7 +44,6 @@ export async function POST(request: NextRequest) {
     // In production, verify the token with Firebase
     // For now, extract from header
     const token = authHeader.substring(7)
-    console.log('[v0] Scan request with token')
 
     // Parse request body
     const body = await request.json()
@@ -83,8 +79,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Starting crop analysis...')
-
     // Analyze crop image
     const analysisResult = await aiService.analyzeCropImage({
       imageUrl,
@@ -105,31 +99,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Store scan in Firestore
     const scanId = `scan_${Date.now()}_${Math.random().toString(36).substring(7)}`
 
+    // Store scan in Firestore only when Firebase is configured
     try {
-      await createDocument('CROP_SCANS', scanId, {
-        userId,
-        farmId,
-        imageUrl,
-        disease: analysisResult.data?.disease,
-        confidence: analysisResult.data?.confidence,
-        severity: analysisResult.data?.severity,
-        symptoms: analysisResult.data?.symptoms,
-        aiExplanation: analysisResult.data?.aiExplanation,
-        treatment: analysisResult.data?.treatment,
-        preventiveMeasures: analysisResult.data?.preventiveMeasures,
-        recoveryEstimate: analysisResult.data?.recoveryEstimate,
-        disclaimer: analysisResult.data?.disclaimer,
-        status: 'completed',
-        aiProvider: analysisResult.metadata?.provider,
-      })
-
-      console.log('[v0] Scan stored:', scanId)
+      const { isFirebaseConfigured } = await import('@/lib/firebase/config')
+      if (isFirebaseConfigured) {
+        const { createDocument } = await import('@/lib/firebase/db')
+        await createDocument('CROP_SCANS', scanId, {
+          userId,
+          farmId,
+          imageUrl,
+          disease: analysisResult.data?.disease,
+          confidence: analysisResult.data?.confidence,
+          severity: analysisResult.data?.severity,
+          symptoms: analysisResult.data?.symptoms,
+          aiExplanation: analysisResult.data?.aiExplanation,
+          treatment: analysisResult.data?.treatment,
+          preventiveMeasures: analysisResult.data?.preventiveMeasures,
+          recoveryEstimate: analysisResult.data?.recoveryEstimate,
+          disclaimer: analysisResult.data?.disclaimer,
+          status: 'completed',
+          aiProvider: analysisResult.metadata?.provider,
+        })
+      }
     } catch (error) {
-      console.error('[v0] Failed to store scan:', error)
-      // Don't fail the response - analysis was successful
+      // Don't fail the response if storage fails
     }
 
     // Return analysis result

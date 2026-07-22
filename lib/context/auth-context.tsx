@@ -1,90 +1,96 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/lib/firebase/config'
-import { getUserProfile } from '@/lib/firebase/db'
-import { UserProfile } from '@/lib/types/database'
 
 interface AuthContextType {
-  user: User | null
-  userProfile: UserProfile | null
+  firebaseUser: unknown | null
+  userProfile: unknown | null
   isLoading: boolean
   isAuthenticated: boolean
+  isFirebaseReady: boolean
   error: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-/**
- * AuthProvider - Wraps the entire app to provide auth state
- */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [firebaseUser, setFirebaseUser] = useState<unknown | null>(null)
+  const [userProfile, setUserProfile] = useState<unknown | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isFirebaseReady, setIsFirebaseReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!auth) {
-      console.error('[v0] Firebase auth not initialized')
-      setIsLoading(false)
-      return
-    }
+    // Dynamically import Firebase only on the client, only when configured.
+    // This prevents the module from being evaluated server-side with empty env vars.
+    let unsubscribe: (() => void) | null = null
 
-    // Listen to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const initAuth = async () => {
       try {
-        setError(null)
+        const { isFirebaseConfigured, auth } = await import('@/lib/firebase/config')
 
-        if (firebaseUser) {
-          // User is signed in
-          setUser(firebaseUser)
-
-          // Load user profile from Firestore
-          try {
-            const profile = await getUserProfile(firebaseUser.uid)
-            setUserProfile(profile)
-          } catch (err) {
-            console.error('[v0] Failed to load user profile:', err)
-            setError('Failed to load user profile')
-          }
-        } else {
-          // User is signed out
-          setUser(null)
-          setUserProfile(null)
+        if (!isFirebaseConfigured || !auth) {
+          // Running in demo mode — no Firebase
+          setIsLoading(false)
+          return
         }
+
+        const { onAuthStateChanged } = await import('firebase/auth')
+        const { getUserProfile } = await import('@/lib/firebase/db')
+
+        setIsFirebaseReady(true)
+
+        unsubscribe = onAuthStateChanged(auth, async (user) => {
+          try {
+            setError(null)
+            if (user) {
+              setFirebaseUser(user)
+              try {
+                const profile = await getUserProfile(user.uid)
+                setUserProfile(profile)
+              } catch {
+                // Profile may not exist yet
+              }
+            } else {
+              setFirebaseUser(null)
+              setUserProfile(null)
+            }
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Auth error')
+          } finally {
+            setIsLoading(false)
+          }
+        })
       } catch (err) {
-        console.error('[v0] Auth state change error:', err)
-        setError(err instanceof Error ? err.message : 'Unknown auth error')
-      } finally {
+        console.warn('[TerraIQ] Auth init failed:', err)
         setIsLoading(false)
       }
-    })
+    }
 
-    return () => unsubscribe()
+    initAuth()
+    return () => { if (unsubscribe) unsubscribe() }
   }, [])
 
-  const value: AuthContextType = {
-    user,
-    userProfile,
-    isLoading,
-    isAuthenticated: !!user,
-    error,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        firebaseUser,
+        userProfile,
+        isLoading,
+        isAuthenticated: !!firebaseUser,
+        isFirebaseReady,
+        error,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
-/**
- * useAuth - Hook to access auth context
- */
 export function useAuth() {
   const context = useContext(AuthContext)
-
   if (context === undefined) {
     throw new Error('useAuth must be used within AuthProvider')
   }
-
   return context
 }
